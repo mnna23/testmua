@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>mua.mn</title>
+  <style>
+    :root{--bg1:#FFB6C1;--bg2:#FFC0CB;--card:#FFC0CB;--muted:#6b6b75;--accent:#ff6b6b}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));}
+
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px}
+    .player{width:100%;max-width:420px;background:rgba(255,255,255,0.92);border-radius:18px;box-shadow:0 12px 30px rgba(20,20,30,0.12);padding:20px;position:relative}
+
+    .card{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;border-radius:14px;background:var(--card);padding:18px;margin-bottom:14px;transition:transform .2s}
+    .card:active{transform:scale(.997)}
+    .han{font-size:72px;font-weight:800;line-height:1;margin:0}
+    .pinyin{margin-top:8px;font-size:20px;color:var(--muted);opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s}
+    .meaning{margin-top:6px;font-size:16px;color:var(--muted);opacity:0;transform:translateY(6px);transition:opacity .18s .04s,transform .18s .04s}
+    .card.revealed .pinyin,.card.revealed .meaning{opacity:1;transform:translateY(0)}
+
+    .controls{display:flex;gap:8px;align-items:center;justify-content:center}
+    button{background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:10px;font-weight:700;min-width:92px}
+    .ghost{background:transparent;color:#333;border:1px solid rgba(0,0,0,0.06);padding:10px 12px}
+
+    .meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#444;margin-bottom:8px}
+    .progress{font-weight:600}
+
+    
+    .sticker{position:absolute;right:-18px;bottom:-18px;width:120px;pointer-events:none;opacity:.96}
+
+    
+    @media(max-width:420px){ .han{font-size:56px} .sticker{width:90px;right:-12px;bottom:-12px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="player" id="player">
+      <div class="meta">
+        <div class="title">Ханзны карт</div>
+        <div class="progress" id="progress">1 / 1</div>
+      </div>
+
+      <div class="card" id="card" role="button" aria-pressed="false">
+        <div class="han" id="han">你</div>
+        <div class="pinyin" id="pinyin">nǐ</div>
+        <div class="meaning" id="meaning">чи</div>
+      </div>
+
+      <div class="controls">
+        <button class="ghost" id="prev">← Өмнөх</button>
+        <button id="next">Дараах</button>
+      </div>
+
+      
+      <img src="hello-kitty.png" alt="" class="r" id="" />
+    </div>
+  </div>
+
+  <script>
+    
+    const cards = [
+      {han: '人', pinyin: 'rén', meaning: 'хүн'},
+      {han: '大', pinyin: 'dà', meaning: 'том'},
+      {han: '天', pinyin: 'tiān', meaning: 'тэнгэр'},
+      {han: '木', pinyin: 'mù', meaning: 'мод'},
+      {han: '林', pinyin: 'lín', meaning: 'ой'},
+      {han: '森', pinyin: 'sēn', meaning: 'ой мод'},
+      {han: '口', pinyin: 'kǒu', meaning: 'ам'},
+      {han: '日', pinyin: 'rì', meaning: 'нар, өдөр'},
+      {han: '目', pinyin: 'mù', meaning: 'нүд'},
+      {han: '水', pinyin: 'shuǐ', meaning: 'ус'},
+      {han: '火', pinyin: 'huǒ', meaning: 'гал'},
+      {han: '明', pinyin: 'mīng', meaning: 'гэрэл гэгээ'},
+      {han: '月', pinyin: 'yuè', meaning: 'сар'},
+      {han: '女', pinyin: 'nǚ', meaning: 'эмэгтэй'},
+      {han: '男', pinyin: 'nán', meaning: 'эрэгтэй'},
+      {han: '媽媽', pinyin: 'māma', meaning: 'ээж'},
+      {han: '爸爸', pinyin: 'bàba', meaning: 'аав'},
+      {han: '田', pinyin: 'tián', meaning: 'газар тариалан'},
+      {han: '姊姊', pinyin: 'jiějie', meaning: 'эгч'},
+      {han: '哥哥', pinyin: 'gēge', meaning: 'ах'},
+      {han: '弟弟', pinyin: 'dìdi', meaning: 'эрэгтэй дүү'},
+      {han: '妹妹', pinyin: 'mèimei', meaning: 'эмэгтэй дүү'},
+      {han: '家', pinyin: 'jiā', meaning: 'гэр бүл'},
+      {han: '奶奶', pinyin: 'nǎinai', meaning: 'эмээ'},
+      {han: '爷爷', pinyin: 'yéye', meaning: 'өвөө'},
+      {han: '老师', pinyin: 'lǎoshī', meaning: 'багш'},
+      {han: '学生', pinyin: 'xuéshēng', meaning: 'сурагч'},
+      {han: '朋友', pinyin: 'péngyǒu', meaning: 'найз'},
+      {han: '零', pinyin: 'líng', meaning: 'тэг'},
+      {han: '一', pinyin: 'yī', meaning: 'нэг'},
+      {han: '二', pinyin: 'èr', meaning: 'хоёр'},
+      {han: '三', pinyin: 'sān', meaning: 'гурав'},
+      {han: '四', pinyin: 'sì', meaning: 'дөрөв'},
+      {han: '五', pinyin: 'wǔ', meaning: 'тав'},
+      {han: '六', pinyin: 'liù', meaning: 'зургаа'},
+      {han: '七', pinyin: 'qī', meaning: 'долоо'},
+      {han: '八', pinyin: 'bā', meaning: 'найм'},
+      {han: '九', pinyin: 'jiǔ', meaning: 'ес'},
+      {han: '十', pinyin: 'shí', meaning: 'арав'},
+      {han: '你', pinyin: 'nǐ', meaning: 'чи'},
+      {han: '我', pinyin: 'wǒ', meaning: 'би'},
+      {han: '他', pinyin: 'tā', meaning: 'тэр (эрэгтэй)'},
+      {han: '她', pinyin: 'tā', meaning: 'тэр (эмэгтэй)'},
+      {han: '好', pinyin: 'hǎo', meaning: 'сайн'},
+      {han: '是', pinyin: 'shì', meaning: 'мөн, бол'},
+      {han: '不', pinyin: 'bù', meaning: 'үгүй'},
+      {han: '您', pinyin: 'nín', meaning: 'та'},
+      {han: '你们', pinyin: 'nǐmen', meaning: 'та нар'},
+      {han: '我们', pinyin: 'wǒmen', meaning: 'бид нар'},
+      {han: '对不起', pinyin: 'duìbuqǐ', meaning: 'уучлаарай'},
+      {han: '谢谢', pinyin: 'xièxiè', meaning: 'баярлалаа'},
+      {han: '没关系', pinyin: 'méiguānxì', meaning: 'зүгээр'},
+      {han: '再见', pinyin: 'zàijiàn', meaning: 'баяртай'},
+      {han: '叫', pinyin: 'jiào', meaning: 'дуудах'},
+      {han: '名字', pinyin: 'míngzì', meaning: 'нэр'},
+      {han: '什么', pinyin: 'shénme', meaning: 'юу'},
+      {han: '中国', pinyin: 'zhōngguó', meaning: 'хятад'},
+      {han: '美国', pinyin: 'měiguó', meaning: 'америк'},
+      {han: '蒙古国', pinyin: 'měnggǔguó', meaning: 'монгол'},
+      {han: '书', pinyin: 'shū', meaning: 'ном'},
+      {han: '这', pinyin: 'zhè', meaning: 'энэ'},
+      {han: '那', pinyin: 'nà', meaning: 'тэр'},
+      {han: '哪里', pinyin: 'nǎlǐ', meaning: 'хаана'},
+      {han: '谁', pinyin: 'shéi', meaning: 'хэн'},
+      {han: '的', pinyin: 'de', meaning: 'өмчлөх'},
+      {han: '汉语', pinyin: 'hànyǔ', meaning: 'хятад хэл'},
+      {han: '呢', pinyin: 'ne', meaning: 'харин'},
+      {han: '同学', pinyin: 'tóngxué', meaning: 'ангийн хүүхэд'}
+    ];
+
+    // =====================
+    // App logic
+    // =====================
+    let idx = 0;
+    const hanEl = document.getElementById('han');
+    const pinyinEl = document.getElementById('pinyin');
+    const meaningEl = document.getElementById('meaning');
+    const cardEl = document.getElementById('card');
+    const progressEl = document.getElementById('progress');
+    const nextBtn = document.getElementById('next');
+    const prevBtn = document.getElementById('prev');
+
+    function render(){
+      const c = cards[idx];
+      hanEl.textContent = c.han;
+      pinyinEl.textContent = c.pinyin;
+      meaningEl.textContent = c.meaning;
+      cardEl.classList.remove('revealed');
+      cardEl.setAttribute('aria-pressed','false');
+      progressEl.textContent = `${idx+1} / ${cards.length}`;
+    }
+
+    function reveal(){
+      cardEl.classList.add('revealed');
+      cardEl.setAttribute('aria-pressed','true');
+    }
+
+    nextBtn.addEventListener('click', ()=>{
+      idx = (idx + 1) % cards.length;
+      render();
+    });
+
+    prevBtn.addEventListener('click', ()=>{
+      idx = (idx - 1 + cards.length) % cards.length;
+      render();
+    });
+
+    // tap card to reveal
+    cardEl.addEventListener('click', ()=>{
+      if(cardEl.classList.contains('revealed')){ // already revealed -> go next
+        idx = (idx + 1) % cards.length;
+        render();
+      } else reveal();
+    });
+
+    // keyboard support: Right/Space = next, Left = prev, Enter = reveal
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'ArrowRight' || e.code === 'Space'){
+        e.preventDefault();
+        idx = (idx + 1) % cards.length; render();
+      } else if(e.key === 'ArrowLeft'){
+        idx = (idx - 1 + cards.length) % cards.length; render();
+      } else if(e.key === 'Enter'){
+        reveal();
+      }
+    });
+
+    // mobile: swipe support (very small and robust)
+    let touchStartX = 0;
+    cardEl.addEventListener('touchstart', (e)=>{ touchStartX = e.changedTouches[0].clientX; });
+    cardEl.addEventListener('touchend', (e)=>{
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if(Math.abs(dx) > 50){ // swipe
+        if(dx < 0) idx = (idx + 1) % cards.length; else idx = (idx - 1 + cards.length) % cards.length;
+        render();
+      } else { // tap
+        if(cardEl.classList.contains('revealed')){ idx = (idx + 1) % cards.length; render(); } else reveal();
+      }
+    });
+
+    // start
+    render();
+  </script>
+</body>
+</html>
+
+    
